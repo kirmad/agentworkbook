@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "title": "React Application Development",
+    "description": "Template for building a React application with AgentWorkbook",
+    "author": "AgentWorkbook Team",
+    "version": "1.0.0",
+    "tags": ["react", "web", "frontend", "javascript"]
+  },
+  "arguments": {
+    "projectName": {
+      "type": "string",
+      "label": "Project Name",
+      "description": "Name of your React project",
+      "required": true,
+      "defaultValue": "my-react-app"
+    },
+    "useTypeScript": {
+      "type": "bool",
+      "label": "Use TypeScript",
+      "description": "Whether to use TypeScript in the project",
+      "defaultValue": false
+    },
+    "framework": {
+      "type": "select",
+      "label": "React Framework",
+      "description": "Choose the React framework to use",
+      "options": ["Create React App", "Next.js", "Vite"],
+      "defaultValue": "Create React App"
+    },
+    "port": {
+      "type": "int",
+      "label": "Development Port",
+      "description": "Port number for the development server",
+      "defaultValue": 3000
+    }
+  },
+  "template": {
+    "cells": [
+      {
+        "kind": "markdown",
+        "value": "# {{projectName}} - React Development\n\nThis notebook will help you build your React application **{{projectName}}** using {{framework}}.\n\n## Project Configuration\n- Framework: {{framework}}\n- TypeScript: {{useTypeScript}}\n- Development Port: {{port}}",
+        "language": "markdown"
+      },
+      {
+        "kind": "code",
+        "value": "import agentworkbook as awb\n\n# Project configuration\nproject_name = \"{{projectName}}\"\nuse_typescript = {{useTypeScript}}\nframework = \"{{framework}}\"\ndev_port = {{port}}\n\nprint(f\"Setting up {project_name} with {framework}\")\nprint(f\"TypeScript enabled: {use_typescript}\")\nprint(f\"Development port: {dev_port}\")",
+        "language": "python"
+      },
+      {
+        "kind": "code",
+        "value": "# Create the React project\nif framework == \"Create React App\":\n    template_flag = \"--template typescript\" if use_typescript else \"\"\n    setup_command = f\"npx create-react-app {project_name} {template_flag}\"\nelif framework == \"Next.js\":\n    template_flag = \"--typescript\" if use_typescript else \"\"\n    setup_command = f\"npx create-next-app@latest {project_name} {template_flag}\"\nelif framework == \"Vite\":\n    template = \"react-ts\" if use_typescript else \"react\"\n    setup_command = f\"npm create vite@latest {project_name} -- --template {template}\"\n\nprint(f\"Running: {setup_command}\")\nresult = await awb.execute_shell(setup_command)\nprint(result.stdout)",
+        "language": "python"
+      },
+      {
+        "kind": "code",
+        "value": "# Navigate to project directory and install dependencies\ncd_command = f\"cd {project_name}\"\ninstall_result = await awb.execute_shell(f\"{cd_command} && npm install\")\nprint(\"Dependencies installed:\")\nprint(install_result.stdout)",
+        "language": "python"
+      },
+      {
+        "kind": "code",
+        "value": "# Start development server\nstart_command = f\"cd {project_name} && npm start\"\nif framework == \"Vite\":\n    start_command = f\"cd {project_name} && npm run dev -- --port {dev_port}\"\nelif framework == \"Next.js\":\n    start_command = f\"cd {project_name} && npm run dev -- -p {dev_port}\"\n\nprint(f\"Starting development server on port {dev_port}...\")\nprint(f\"Run: {start_command}\")\nprint(f\"\\nYour React app will be available at: http://localhost:{dev_port}\")",
+        "language": "python"
+      }
+    ]
+  }
+}

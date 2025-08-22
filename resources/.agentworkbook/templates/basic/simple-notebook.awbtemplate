@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "title": "Simple Project Notebook",
+    "description": "A simple template for general project work",
+    "author": "AgentWorkbook Team",
+    "version": "1.0.0",
+    "tags": ["basic", "general", "project"]
+  },
+  "arguments": {
+    "title": {
+      "type": "string",
+      "label": "Project Title",
+      "description": "Title for your project",
+      "required": true,
+      "defaultValue": "My Project"
+    },
+    "language": {
+      "type": "select",
+      "label": "Primary Language",
+      "description": "Main programming language for this project",
+      "options": ["Python", "JavaScript", "TypeScript", "Java", "Go"],
+      "defaultValue": "Python"
+    },
+    "includeTests": {
+      "type": "bool",
+      "label": "Include Testing Setup",
+      "description": "Add cells for setting up tests",
+      "defaultValue": true
+    }
+  },
+  "template": {
+    "cells": [
+      {
+        "kind": "markdown",
+        "value": "# {{title}}\n\nWelcome to your {{language}} project!\n\nThis notebook will help you manage and develop your project efficiently.",
+        "language": "markdown"
+      },
+      {
+        "kind": "code",
+        "value": "import agentworkbook as awb\n\n# Project setup\nproject_title = \"{{title}}\"\nprimary_language = \"{{language}}\"\ninclude_tests = {{includeTests}}\n\nprint(f\"Project: {project_title}\")\nprint(f\"Language: {primary_language}\")\nprint(f\"Testing: {'Enabled' if include_tests else 'Disabled'}\")",
+        "language": "python"
+      },
+      {
+        "kind": "code",
+        "value": "# Initialize project structure\nsetup_commands = [\n    \"mkdir -p src\",\n    \"mkdir -p docs\",\n]\n\nif include_tests:\n    setup_commands.append(\"mkdir -p tests\")\n\nfor command in setup_commands:\n    result = await awb.execute_shell(command)\n    print(f\"✓ {command}\")\n\nprint(\"\\nProject structure created!\")",
+        "language": "python"
+      }
+    ]
+  }
+}

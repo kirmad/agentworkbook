@@ -1,0 +1,12 @@
+out
+dist
+dist-renderer
+node_modules
+.vscode-test/
+*.vsix
+resources/pyodide
+
+/Roo-Code-*
+logs/*
+resources/__pycache__/*.pyc
+.trash

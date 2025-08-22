@@ -1,0 +1,21 @@
+name: "Task Creation with Flags Example"
+description: "Example showing task creation with flag processing"
+language: "python"
+code: |
+  import agentworkbook as awb
+  
+  # Create tasks with flags
+  tasks = awb.create_tasks([
+      "Create a user login system --incremental --with-tests",
+      "Implement password reset feature --think"
+  ], mode="code")
+  
+  print(f"Created {len(tasks)} tasks:")
+  for i, task in enumerate(tasks, 1):
+      print(f"  {i}. {task.id}: {task.prompt[:50]}...")
+  
+  # Submit the tasks
+  for task in tasks:
+      task.submit()
+      
+  print("All tasks submitted!")

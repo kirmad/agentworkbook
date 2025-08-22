@@ -1,0 +1,11 @@
+out
+dist
+dist-renderer
+node_modules
+.vscode-test/
+*.vsix
+resources/
+yarn.lock
+
+/.direnv
+/.envrc

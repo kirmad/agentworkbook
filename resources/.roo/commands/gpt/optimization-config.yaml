@@ -1,0 +1,179 @@
+# GPT 4.1 Optimization Configuration
+# Core optimization patterns and settings for Roo Code slash commands
+
+version: "1.0.0"
+optimization_target: "gpt-4.1"
+
+# Core GPT 4.1 Optimization Patterns
+prompting_techniques:
+  structured_reasoning:
+    enabled: true
+    depth_levels: ["basic", "intermediate", "advanced", "expert"]
+    validation_checkpoints: true
+    
+  chain_of_thought:
+    enabled: true
+    explicit_steps: true
+    reasoning_validation: true
+    evidence_requirements: true
+    
+  few_shot_learning:
+    enabled: true
+    domain_specific_examples: true
+    pattern_library: true
+    context_adaptation: true
+
+  progressive_disclosure:
+    enabled: true
+    complexity_based_layering: true
+    user_expertise_adaptation: true
+    context_sensitive_detail: true
+
+# Token Efficiency Optimizations
+token_management:
+  efficiency_targets:
+    standard_reduction: "30-50%"
+    aggressive_reduction: "60-70%"
+    emergency_reduction: "70-85%"
+    
+  structured_output:
+    symbol_system: true
+    abbreviation_mapping: true
+    compressed_reporting: true
+    evidence_consolidation: true
+    
+  context_optimization:
+    intelligent_windowing: true
+    context_compression: true
+    relevance_filtering: true
+    progressive_context_building: true
+
+# Quality Assurance Framework
+quality_gates:
+  validation_cycle:
+    steps: 8
+    evidence_requirements: true
+    quantitative_metrics: true
+    qualitative_assessments: true
+    
+  completion_criteria:
+    evidence_based: true
+    measurable_outcomes: true
+    stakeholder_validation: true
+    performance_benchmarks: true
+    
+  continuous_improvement:
+    pattern_recognition: true
+    success_tracking: true
+    failure_analysis: true
+    process_optimization: true
+
+# Boomerang Task Integration
+task_orchestration:
+  delegation_patterns:
+    intelligent_routing: true
+    specialization_matching: true
+    result_aggregation: true
+    context_preservation: true
+    
+  coordination_protocols:
+    cross_agent_communication: true
+    dependency_management: true
+    parallel_execution: true
+    synchronization_points: true
+    
+  validation_frameworks:
+    multi_agent_validation: true
+    consensus_building: true
+    conflict_resolution: true
+    quality_assurance: true
+
+# Wave System Configuration
+wave_orchestration:
+  activation_criteria:
+    complexity_threshold: 0.7
+    file_count_threshold: 20
+    operation_type_threshold: 2
+    
+  progressive_phases:
+    foundation: "discovery, analysis, planning"
+    development: "implementation, integration, optimization"  
+    validation: "testing, quality assurance, deployment"
+    optimization: "performance tuning, documentation, handoff"
+    
+  context_accumulation:
+    cross_wave_learning: true
+    pattern_recognition: true
+    adaptive_improvement: true
+    knowledge_consolidation: true
+
+# Performance Optimization
+performance_targets:
+  response_time:
+    routing_decisions: "<100ms"
+    command_execution: "<5min (medium complexity)"
+    complex_operations: "<30min (with progress updates)"
+    
+  resource_efficiency:
+    token_optimization: "30-50% reduction"
+    context_retention: "≥90%"
+    quality_preservation: "≥95%"
+    
+  scalability:
+    concurrent_operations: "up to 10 parallel tasks"
+    enterprise_scale: "100+ files, multiple domains"
+    cross_session_persistence: "unlimited duration"
+
+# Success Metrics Configuration
+success_criteria:
+  quality_standards:
+    completion_rate: ">95%"
+    accuracy_rate: ">90%"
+    user_satisfaction: ">90%"
+    
+  performance_benchmarks:
+    efficiency_improvement: ">40% vs baseline"
+    error_reduction: ">80% vs manual processes"
+    time_savings: ">60% vs traditional approaches"
+    
+  learning_indicators:
+    pattern_recognition_accuracy: ">85%"
+    adaptive_improvement_rate: ">20% per iteration"
+    knowledge_transfer_effectiveness: ">90%"
+
+# Integration Configuration
+roo_code_integration:
+  slash_command_compatibility: true
+  boomerang_task_support: true
+  cross_session_persistence: true
+  quality_pipeline_integration: true
+  
+  mcp_server_coordination:
+    context7: "documentation and patterns"
+    sequential: "complex reasoning and analysis"  
+    magic: "ui component generation"
+    playwright: "testing and validation"
+    
+  persona_system_integration:
+    auto_activation: true
+    context_based_selection: true
+    multi_persona_coordination: true
+    conflict_resolution: true
+
+# Advanced Features
+advanced_capabilities:
+  predictive_optimization:
+    pattern_based_prediction: true
+    resource_usage_forecasting: true
+    quality_risk_assessment: true
+    
+  adaptive_learning:
+    usage_pattern_analysis: true
+    success_factor_identification: true
+    process_improvement_suggestions: true
+    
+  enterprise_features:
+    governance_integration: true
+    compliance_tracking: true
+    audit_trail_generation: true
+    stakeholder_reporting: true

@@ -1,0 +1,10 @@
+name: "Execute Shell Command"
+description: "Template for executing shell commands in AgentWorkbook"
+language: "python"
+code: |
+  import agentworkbook as awb
+  
+  # Execute a shell command
+  result = await awb.execute_shell("echo 'Hello World'")
+  print(f"Exit code: {result.exitCode}")
+  print(f"Output: {result.stdout}")

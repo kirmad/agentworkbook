@@ -1,0 +1,9 @@
+name: "Basic Task Creation"
+description: "Create a basic AgentWorkbook task"
+language: "python"
+code: |
+  import agentworkbook as awb
+  
+  # Create a new task
+  task = awb.create_tasks(["Your task description here"], mode="code")
+  print(f"Created task: {task[0].id}")

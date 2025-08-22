@@ -1,0 +1,316 @@
+{
+  "name": "agentworkbook",
+  "publisher": "KiranMadipally",
+  "displayName": "AgentWorkbook - AI Task Manager & Notebook",
+  "description": "AI-powered notebook extension for intelligent task management with RooCode & Copilot integration, Python execution, visual task queues, and advanced flag system for streamlined development workflows.",
+  "repository": "github:kirmad/agentworkbook",
+  "version": "0.0.1",
+  "keywords": [
+    "notebook",
+    "python",
+    "ai",
+    "roocode",
+    "copilot", 
+    "jupyter",
+    "task-management",
+    "automation",
+    "workflow",
+    "productivity",
+    "pyodide",
+    "assistant",
+    "coding",
+    "development",
+    "flags",
+    "templates",
+    "text-to-speech",
+    "tts",
+    "queue",
+    "visual"
+  ],
+  "bugs": {
+    "url": "https://github.com/kirmad/agentworkbook/issues"
+  },
+  "homepage": "https://github.com/kirmad/agentworkbook#readme",
+  "engines": {
+    "vscode": ">=1.88.0",
+    "node": ">=16.0.0"
+  },
+  "categories": [
+    "Notebooks",
+    "Machine Learning",
+    "Other"
+  ],
+  "activationEvents": [
+    "onNotebook:agentworkbook"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "agentworkbook.newNotebook",
+        "title": "AgentWorkbook: New notebook"
+      },
+      {
+        "command": "agentworkbook.insertTemplate",
+        "title": "Insert Code Template",
+        "icon": "$(add)",
+        "enablement": "notebookType == 'agentworkbook'"
+      },
+      {
+        "command": "agentworkbook.installResources",
+        "title": "AgentWorkbook: Install Resources (Flags, Scripts, Templates)"
+      },
+      {
+        "command": "agentworkbook.installFlags",
+        "title": "AgentWorkbook: Install Flags"
+      },
+      {
+        "command": "agentworkbook.installScripts",
+        "title": "AgentWorkbook: Install Scripts"
+      },
+      {
+        "command": "agentworkbook.installTemplates",
+        "title": "AgentWorkbook: Install Templates"
+      },
+      {
+        "command": "agentworkbook.installRooCodeResources",
+        "title": "RooCode: Install All Resources (Modes, Commands, Rules)"
+      },
+      {
+        "command": "agentworkbook.installRooCodeModes",
+        "title": "RooCode: Install Custom Modes"
+      },
+      {
+        "command": "agentworkbook.installRooCodeCommands",
+        "title": "RooCode: Install Slash Commands"
+      },
+      {
+        "command": "agentworkbook.installRooCodeRules",
+        "title": "RooCode: Install Custom Instructions"
+      },
+      {
+        "command": "agentworkbook.toggleShellCommands",
+        "title": "AgentWorkbook: Toggle Shell Commands"
+      },
+      {
+        "command": "agentworkbook.clearShellCommandCache",
+        "title": "AgentWorkbook: Clear Shell Command Cache"
+      }
+    ],
+    "notebooks": [
+      {
+        "type": "agentworkbook",
+        "displayName": "AgentWorkbook Notebook",
+        "selector": [
+          {
+            "filenamePattern": "*.agentworkbook"
+          }
+        ]
+      }
+    ],
+    "notebookRenderer": [
+      {
+        "id": "agentworkbook-status-renderer",
+        "displayName": "AgentWorkbook Status Renderer",
+        "entrypoint": "./dist-renderer/main.js",
+        "mimeTypes": [
+          "application/x-agentworkbook-status"
+        ],
+        "requiresMessaging": "always"
+      }
+    ],
+    "menus": {
+      "notebook/toolbar": [
+        {
+          "command": "agentworkbook.insertTemplate",
+          "when": "notebookType == 'agentworkbook'",
+          "group": "navigation@1"
+        }
+      ],
+      "notebook/cell/title": [
+        {
+          "command": "agentworkbook.insertTemplate",
+          "when": "notebookType == 'agentworkbook'",
+          "group": "inline@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "agentworkbook.installResources",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "agentworkbook.installFlags",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "agentworkbook.installScripts",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "agentworkbook.installTemplates",
+          "when": "workspaceFolderCount > 0"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AgentWorkbook",
+      "type": "object",
+      "properties": {
+        "agentworkbook.telemetry.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable telemetry to help us improve the extension"
+        },
+        "agentworkbook.tts.provider": {
+          "type": "string",
+          "default": "elevenlabs",
+          "enum": ["elevenlabs", "azure"],
+          "description": "Text-to-speech provider",
+          "order": 1
+        },
+        "agentworkbook.tts.elevenlabs.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "ElevenLabs API key for text-to-speech functionality",
+          "order": 2
+        },
+        "agentworkbook.tts.elevenlabs.voice": {
+          "type": "string",
+          "default": "rachel",
+          "enum": ["rachel", "adam", "antoni", "arnold", "bella", "domi", "elli", "gigi", "giovanni", "josh", "matilda", "nicole", "sam"],
+          "description": "ElevenLabs voice for text-to-speech",
+          "order": 3
+        },
+        "agentworkbook.tts.elevenlabs.model": {
+          "type": "string", 
+          "default": "eleven_multilingual_v2",
+          "enum": ["eleven_multilingual_v2", "eleven_turbo_v2", "eleven_flash_v2"],
+          "description": "ElevenLabs model for text-to-speech",
+          "order": 4
+        },
+        "agentworkbook.tts.azure.subscriptionKey": {
+          "type": "string",
+          "default": "",
+          "description": "Azure Speech Services subscription key",
+          "order": 5
+        },
+        "agentworkbook.tts.azure.region": {
+          "type": "string",
+          "default": "eastus",
+          "enum": ["eastus", "westus2", "centralus", "northeurope", "westeurope", "eastasia", "southeastasia", "japaneast", "australiaeast", "canadacentral", "uksouth", "francecentral"],
+          "description": "Azure region for Speech Services",
+          "order": 6
+        },
+        "agentworkbook.tts.azure.voice": {
+          "type": "string",
+          "default": "en-US-JennyNeural",
+          "enum": ["en-US-JennyNeural", "en-US-GuyNeural", "en-US-AriaNeural", "en-US-DavisNeural", "en-US-JaneNeural", "en-US-JasonNeural", "en-US-SaraNeural", "en-US-TonyNeural", "en-GB-SoniaNeural", "en-GB-RyanNeural", "en-AU-NatashaNeural", "en-AU-WilliamNeural", "fr-FR-DeniseNeural", "fr-FR-HenriNeural", "de-DE-KatjaNeural", "de-DE-ConradNeural", "es-ES-ElviraNeural", "es-ES-AlvaroNeural", "it-IT-ElsaNeural", "it-IT-IsabellaNeural", "ja-JP-NanamiNeural", "ja-JP-KeitaNeural", "zh-CN-XiaoxiaoNeural", "zh-CN-YunyangNeural"],
+          "description": "Azure Speech voice for text-to-speech",
+          "order": 7
+        },
+        "agentworkbook.tts.azure.format": {
+          "type": "string",
+          "default": "audio-24khz-160kbitrate-mono-mp3",
+          "enum": ["audio-16khz-128kbitrate-mono-mp3", "audio-24khz-160kbitrate-mono-mp3", "audio-48khz-192kbitrate-mono-mp3", "riff-16khz-16bit-mono-pcm", "riff-24khz-16bit-mono-pcm", "riff-48khz-16bit-mono-pcm"],
+          "description": "Audio output format for Azure Speech",
+          "order": 8
+        },
+        "agentworkbook.shellCommands.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable shell command execution in custom commands using !`command` syntax",
+          "order": 9
+        }
+      }
+    }
+  },
+  "extensionDependencies": [
+    "rooveterinaryinc.roo-cline"
+  ],
+  "scripts": {
+    "vscode:prepublish": "yarn package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "package:vsce": "vsce package",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "yarn compile-tests && yarn compile && yarn lint",
+    "lint": "eslint src",
+    "test": "node ./out/test/runTest.js",
+    "download-pyodide": "node scripts/download-pyodide.js",
+    "postinstall": "yarn download-pyodide",
+    "build": "yarn clean && yarn compile && yarn package",
+    "build:prod": "yarn clean && yarn lint && yarn test && yarn package",
+    "clean": "rimraf dist dist-renderer out *.vsix",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version", 
+    "version:major": "npm version major --no-git-tag-version",
+    "release:patch": "yarn version:patch && yarn build:prod && yarn package:vsce && yarn publish:marketplace",
+    "release:minor": "yarn version:minor && yarn build:prod && yarn package:vsce && yarn publish:marketplace",
+    "release:major": "yarn version:major && yarn build:prod && yarn package:vsce && yarn publish:marketplace",
+    "publish:marketplace": "vsce publish",
+    "publish:ovsx": "ovsx publish",
+    "publish:all": "yarn publish:marketplace && yarn publish:ovsx",
+    "release:full": "yarn build:prod && yarn package:vsce && git add . && git commit -m \"chore: release v$(node -p \"require('./package.json').version\")\" && git tag v$(node -p \"require('./package.json').version\") && git push origin main --tags && yarn publish:all",
+    "ci:build": "yarn install --frozen-lockfile && yarn build:prod",
+    "ci:test": "yarn install --frozen-lockfile && yarn lint && yarn test",
+    "dev": "yarn compile && code --extensionDevelopmentPath=$PWD --new-window"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.37.0",
+    "compare-versions": "^6.1.1",
+    "js-yaml": "^4.1.0",
+    "posthog-node": "4.10.1",
+    "pyodide": "0.23.4",
+    "react": "^19.0",
+    "react-dom": "^19.0",
+    "uuid": "^10.0.0",
+    "uuidv7": "^1.0.2"
+  },
+  "devDependencies": {
+    "@svgr/webpack": "^8.1.0",
+    "@types/chai": "^4.3.0",
+    "@types/chai-as-promised": "^7.1.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/react": "^19.0",
+    "@types/react-dom": "^19.0",
+    "@types/uuid": "^10.0.0",
+    "@types/vscode": "^1.88.0",
+    "@types/vscode-notebook-renderer": "^1.72.3",
+    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/parser": "^8.22.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.1",
+    "chai": "^4.3.0",
+    "chai-as-promised": "^7.1.0",
+    "eslint": "^9.19.0",
+    "ovsx": "^0.9.5",
+    "rimraf": "^6.0.1",
+    "ignore-loader": "^0.1.2",
+    "mocha": "^11.1.0",
+    "raw-loader": "^4.0.2",
+    "tar": "^7.4.3",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.7.3",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610",
+  "files": [
+    "dist",
+    "dist-renderer",
+    "resources/**/*.wasm",
+    "resources/**/*.js",
+    "resources/**/*.mjs",
+    "resources/**/*.py",
+    "resources/pyodide/**",
+    "resources/.agentworkbook/**",
+    "README.md",
+    "LICENSE"
+  ]
+}

@@ -1,0 +1,228 @@
+.task-wrapper {
+    padding-left: 4px;
+    padding-right: 4px;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    margin-left: -2px;
+    margin-right: -2px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    display: inline-block;
+}
+
+.task {
+    /* Modern Compact Design */
+    background: var(--white);
+    border: 1px solid var(--lighter);
+    border-radius: 6px;
+    box-shadow: none;
+    
+    /* Compact Layout */
+    padding: 10px 12px;
+    width: 160px;
+    height: 70px;
+    font-family: system-ui, -apple-system, sans-serif;
+    
+    /* Typography */
+    color: var(--dark);
+    font-size: 12px;
+    line-height: 1.3;
+    
+    /* Behavior */
+    position: relative;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.15s ease;
+}
+
+.task:hover {
+    border-color: var(--border);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+.task-id-wrapper {
+    /* Compact ID Display */
+    position: absolute;
+    bottom: 4px;
+    right: 8px;
+    cursor: default;
+}
+
+.task-id {
+    font-size: 9px;
+    font-family: ui-monospace, 'SF Mono', Monaco, monospace;
+    color: var(--muted);
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.task:hover .task-id {
+    opacity: 0.8;
+}
+.task-prompt {
+    /* Compact Content Area */
+    flex: 1;
+    margin: 6px 0 4px 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-word;
+    white-space: normal;
+    font-size: 12px;
+    line-height: 1.25;
+    color: var(--dark);
+    font-weight: 400;
+}
+/* Compact Button Styling */
+.task-buttons {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    z-index: 10;
+}
+
+.task-buttons a {
+    opacity: 0.4;
+    color: var(--muted);
+    transition: all 0.15s ease;
+    border-radius: 3px;
+    padding: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.task-buttons a:hover {
+    opacity: 1;
+    transform: scale(1.05);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.task:hover .task-buttons a {
+    opacity: 0.6;
+}
+
+.delete-button {
+    color: var(--danger) !important;
+    opacity: 0.3 !important;
+}
+
+.delete-button:hover {
+    color: var(--danger) !important;
+    opacity: 0.8 !important;
+    background: rgba(220, 53, 69, 0.08) !important;
+}
+
+.task {
+    /* Modern Color Palette */
+    --primary: #0d6efd;
+    --success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+    --secondary: #6c757d;
+    --purple: #6f42c1;
+    
+    /* Base Colors */
+    --white: #ffffff;
+    --light: #f8f9fa;
+    --lighter: #e9ecef;
+    --border: #dee2e6;
+    --muted: #6c757d;
+    --dark: #212529;
+    
+    /* Status Colors */
+    --prepared-color: var(--secondary);
+    --queued-color: var(--primary);
+    --running-color: var(--info);
+    --completed-color: var(--success);
+    --asking-color: var(--purple);
+    --error-color: var(--danger);
+    --aborted-color: var(--danger);
+    
+    /* Status Badge Colors */
+    --prepared-badge: var(--secondary);
+    --queued-badge: var(--primary);
+    --running-badge: var(--info);
+    --completed-badge: var(--success);
+    --asking-badge: var(--purple);
+    --error-badge: var(--danger);
+    --aborted-badge: var(--danger);
+}
+/* Clean Status States - Minimal Visual Noise */
+
+.task-status-badge {
+    /* Compact Status Display */
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.task-status-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 6px;
+    display: inline-block;
+}
+
+/* Status Dot Colors */
+.prepared .task-status-badge::before {
+    background: var(--prepared-badge);
+}
+
+.queued .task-status-badge::before {
+    background: var(--queued-badge);
+}
+
+.running .task-status-badge::before {
+    background: var(--running-badge);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.completed .task-status-badge::before {
+    background: var(--completed-badge);
+}
+
+.asking .task-status-badge::before {
+    background: var(--asking-badge);
+}
+
+.aborted .task-status-badge::before,
+.error .task-status-badge::before {
+    background: var(--error-badge);
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Minimal Selection States */
+.task.selected {
+    border-color: #0d6efd;
+}
+
+.task.draggable {
+    cursor: move;
+}
+
+.task-wrapper.drop-target-right-edge {
+    border-right: 4px solid var(--selection-border-color);
+}
+.task-wrapper.drop-target-left-edge {
+    border-left: 4px solid var(--selection-border-color);
+}

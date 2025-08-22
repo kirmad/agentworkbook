@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "title": "Data Analysis Notebook",
+    "description": "Template for data analysis and visualization projects",
+    "author": "AgentWorkbook Team",
+    "version": "1.0.0",
+    "tags": ["data-science", "analysis", "python", "visualization"]
+  },
+  "arguments": {
+    "datasetName": {
+      "type": "string",
+      "label": "Dataset Name",
+      "description": "Name of the dataset you'll be analyzing",
+      "required": true,
+      "defaultValue": "sample_data"
+    },
+    "analysisType": {
+      "type": "select",
+      "label": "Analysis Type",
+      "description": "Type of analysis to perform",
+      "options": ["Exploratory Data Analysis", "Statistical Analysis", "Machine Learning", "Time Series Analysis"],
+      "defaultValue": "Exploratory Data Analysis"
+    },
+    "sampleSize": {
+      "type": "int",
+      "label": "Sample Size",
+      "description": "Number of samples to analyze (if applicable)",
+      "defaultValue": 1000
+    },
+    "includeVisualization": {
+      "type": "bool",
+      "label": "Include Visualization",
+      "description": "Add visualization cells with matplotlib/seaborn",
+      "defaultValue": true
+    }
+  },
+  "template": {
+    "cells": [
+      {
+        "kind": "markdown",
+        "value": "# {{datasetName}} - {{analysisType}}\n\nThis notebook contains analysis for the **{{datasetName}}** dataset.\n\n## Analysis Configuration\n- Analysis Type: {{analysisType}}\n- Sample Size: {{sampleSize}}\n- Visualization: {{includeVisualization}}\n\n## Setup\nFirst, let's import the necessary libraries and set up our environment.",
+        "language": "markdown"
+      },
+      {
+        "kind": "code",
+        "value": "import agentworkbook as awb\nimport pandas as pd\nimport numpy as np\n\n# Analysis configuration\ndataset_name = \"{{datasetName}}\"\nanalysis_type = \"{{analysisType}}\"\nsample_size = {{sampleSize}}\ninclude_viz = {{includeVisualization}}\n\nprint(f\"Dataset: {dataset_name}\")\nprint(f\"Analysis: {analysis_type}\")\nprint(f\"Sample size: {sample_size}\")\nprint(f\"Visualization: {'Enabled' if include_viz else 'Disabled'}\")",
+        "language": "python"
+      },
+      {
+        "kind": "code",
+        "value": "# Import visualization libraries if needed\nif include_viz:\n    import matplotlib.pyplot as plt\n    import seaborn as sns\n    \n    # Set style\n    plt.style.use('default')\n    sns.set_palette(\"husl\")\n    \n    print(\"Visualization libraries loaded\")\nelse:\n    print(\"Skipping visualization setup\")",
+        "language": "python"
+      },
+      {
+        "kind": "code",
+        "value": "# Load and prepare data\n# TODO: Replace with actual data loading\n# df = pd.read_csv('{{datasetName}}.csv')\n\n# For demo, create sample data\nnp.random.seed(42)\ndf = pd.DataFrame({\n    'feature_1': np.random.normal(0, 1, sample_size),\n    'feature_2': np.random.exponential(2, sample_size),\n    'target': np.random.choice(['A', 'B', 'C'], sample_size)\n})\n\nprint(f\"Dataset shape: {df.shape}\")\nprint(\"\\nDataset info:\")\nprint(df.info())\nprint(\"\\nFirst few rows:\")\nprint(df.head())",
+        "language": "python"
+      },
+      {
+        "kind": "code",
+        "value": "# Basic statistics\nprint(\"Dataset Summary Statistics:\")\nprint(df.describe())\n\nprint(\"\\nValue counts for categorical variables:\")\nfor col in df.select_dtypes(include=['object']).columns:\n    print(f\"\\n{col}:\")\n    print(df[col].value_counts())",
+        "language": "python"
+      }
+    ]
+  }
+}
