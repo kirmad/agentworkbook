@@ -2,9 +2,11 @@
  * Factory for creating AI task clients with configuration management
  */
 
+import * as vscode from 'vscode';
 import { ITaskClient, ClientType, ClientConfig, ClientError } from './clientTypes';
 import { SuperCodeClient } from './supercodeClient';
 import { RooCodeClient } from './rooCodeClient';
+import { CopilotClient } from './copilotClient';
 import { IClineController } from './controller';
 
 /**
@@ -81,8 +83,10 @@ export class ClientFactory {
         
         switch (clientType) {
             case 'roo':
-            case 'copilot':
                 return this.createRooCodeClient();
+                
+            case 'copilot':
+                return this.createCopilotClient(config);
                 
             case 'supercode':
                 return this.createSuperCodeClient(config);
@@ -119,6 +123,19 @@ export class ClientFactory {
     }
 
     /**
+     * Create Copilot client
+     */
+    private createCopilotClient(config: ClientConfig): CopilotClient {
+        const copilotConfig = {
+            taskTimeout: config.timeout || this.defaultConfig.timeout,
+            clearChatBeforeTask: true,
+            focusChat: true
+        };
+
+        return new CopilotClient(copilotConfig);
+    }
+
+    /**
      * Create SuperCode client
      */
     private createSuperCodeClient(config: ClientConfig): SuperCodeClient {
@@ -139,6 +156,12 @@ export class ClientFactory {
             // For SuperCode with custom URL, include URL in cache key
             return `${clientType}:${config.supercodeUrl}:${config.timeout || this.defaultConfig.timeout}`;
         }
+        
+        if (clientType === 'copilot') {
+            // For Copilot, include timeout in cache key
+            return `${clientType}:${config?.timeout || this.defaultConfig.timeout}`;
+        }
+        
         return `${clientType}:${config?.timeout || this.defaultConfig.timeout}`;
     }
 
@@ -152,6 +175,22 @@ export class ClientFactory {
             if (client && client.dispose) {
                 client.dispose().catch(error => {
                     console.warn('Error disposing SuperCode client:', error);
+                });
+            }
+            this.clientCache.delete(key);
+        }
+    }
+
+    /**
+     * Clear cached Copilot clients
+     */
+    private clearCopilotClientCache(): void {
+        const keysToDelete = Array.from(this.clientCache.keys()).filter(key => key.startsWith('copilot:'));
+        for (const key of keysToDelete) {
+            const client = this.clientCache.get(key);
+            if (client && client.dispose) {
+                client.dispose().catch(error => {
+                    console.warn('Error disposing Copilot client:', error);
                 });
             }
             this.clientCache.delete(key);
@@ -199,6 +238,41 @@ export class ClientFactory {
             return true;
         } catch (error) {
             console.error('SuperCode connection test failed:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Test GitHub Copilot availability in VS Code
+     */
+    async testCopilotConnection(): Promise<boolean> {
+        try {
+            // Check if Copilot extension is available and active
+            const copilotExtension = vscode.extensions.getExtension('GitHub.copilot');
+            const copilotChatExtension = vscode.extensions.getExtension('GitHub.copilot-chat');
+            
+            if (!copilotExtension || !copilotChatExtension) {
+                console.error('GitHub Copilot extensions not found');
+                return false;
+            }
+
+            // Ensure extensions are active
+            if (!copilotExtension.isActive) {
+                await copilotExtension.activate();
+            }
+            
+            if (!copilotChatExtension.isActive) {
+                await copilotChatExtension.activate();
+            }
+
+            // Test if we can execute chat commands
+            await vscode.commands.executeCommand('workbench.action.chat.open');
+            
+            console.log('Copilot connection test successful');
+            return true;
+            
+        } catch (error) {
+            console.error('Copilot connection test failed:', error);
             return false;
         }
     }
