@@ -5,6 +5,8 @@ import { Task, Tasks } from './manager';
 import { ICommandExecutor } from './interfaces';
 import * as telemetry from '../utils/telemetry';
 import { shellCommandProcessor } from '../utils/shellCommandProcessor';
+import { ClientFactory } from '../ai/clientFactory';
+import { ITaskClient, ClientConfig, ClientError } from '../ai/clientTypes';
 
 
 export class Worker {
@@ -60,9 +62,14 @@ export class Worker {
 
                 task.status = 'running';
 
-                // Handle Copilot tasks differently
+                // Handle different client types
                 if (task.client === 'copilot') {
                     await this.handleCopilotTask(task);
+                    continue;  // move on to the next task
+                }
+                
+                if (task.client === 'supercode') {
+                    await this.handleSuperCodeTask(task);
                     continue;  // move on to the next task
                 }
 
@@ -228,6 +235,94 @@ export class Worker {
             
         } catch (error) {
             this.outputChannel.appendLine(`Error handling Copilot task #${task.id}: ${error}`);
+            task.status = 'error';
+        }
+    }
+
+    /**
+     * Handle SuperCode tasks by using the SuperCode TUI API client
+     */
+    private async handleSuperCodeTask(task: Task): Promise<void> {
+        try {
+            // Run onstart hook
+            const hookResult = await task.runHook('onstart');
+            if (hookResult.failed) {
+                task.status = 'error';
+                return;
+            }
+
+            // Process shell commands in the prompt before sending to SuperCode
+            let processedPrompt = task.prompt;
+            try {
+                processedPrompt = await shellCommandProcessor.processContent(task.prompt);
+            } catch (error) {
+                console.error('Error processing shell commands in SuperCode task prompt:', error);
+                // Continue with original prompt if shell processing fails
+            }
+
+            // Update task prompt with processed version
+            task.prompt = processedPrompt;
+
+            // Create SuperCode client with URL override if provided
+            const clientConfig: ClientConfig = {
+                supercodeUrl: task.supercodeUrl,
+                timeout: 30000,
+                maxRetries: 3
+            };
+
+            const client = ClientFactory.getInstance().createClient('supercode', clientConfig);
+
+            // Submit task to SuperCode
+            this.outputChannel.appendLine(`Submitting SuperCode task #${task.id}...`);
+            await client.submitTask(task);
+
+            // Poll for completion
+            this.outputChannel.appendLine(`Polling SuperCode task #${task.id} for completion...`);
+            let attempts = 0;
+            const maxAttempts = 300; // 5 minutes at 1-second intervals
+            
+            while (attempts < maxAttempts) {
+                const status = await client.getTaskStatus(task);
+                
+                if (status === 'completed') {
+                    // Run oncomplete hook
+                    const hookCompleteResult = await task.runHook('oncomplete');
+                    task.status = hookCompleteResult.failed ? 'error' : 'completed';
+                    this.outputChannel.appendLine(`SuperCode task #${task.id} completed successfully`);
+                    return;
+                }
+                
+                if (status === 'error') {
+                    task.status = 'error';
+                    this.outputChannel.appendLine(`SuperCode task #${task.id} failed with error status`);
+                    return;
+                }
+                
+                if (status === 'aborted') {
+                    task.status = 'aborted';
+                    this.outputChannel.appendLine(`SuperCode task #${task.id} was aborted`);
+                    return;
+                }
+
+                // Wait 1 second before checking again
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                attempts++;
+            }
+
+            // Timeout - task took too long
+            this.outputChannel.appendLine(`SuperCode task #${task.id} timed out after 5 minutes`);
+            task.status = 'error';
+
+        } catch (error) {
+            this.outputChannel.appendLine(`Error handling SuperCode task #${task.id}: ${error}`);
+            
+            if (error instanceof ClientError) {
+                this.outputChannel.appendLine(`Client error details: ${error.message}`);
+                if (error.cause) {
+                    this.outputChannel.appendLine(`Caused by: ${error.cause.message}`);
+                }
+            }
+            
             task.status = 'error';
         }
     }

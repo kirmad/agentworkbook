@@ -182,14 +182,14 @@ def live_preview():
     return api.livePreview()
 
 @track_api_call
-def create_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo') -> list[Task]:
+def create_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None) -> list[Task]:
     hooks = None if hooks is None else hooks._hooks
-    tasks = api.createTasks(prompts, mode, hooks, client)
+    tasks = api.createTasks(prompts, mode, hooks, client, supercode_url)
     return [Task(task) for task in tasks]
 
 @track_api_call
-def submit_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo') -> list[Task]:
-    tasks = create_tasks(prompts, mode, hooks, client)
+def submit_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None) -> list[Task]:
+    tasks = create_tasks(prompts, mode, hooks, client, supercode_url)
     for task in tasks:
         task.submit()
     return tasks
@@ -807,6 +807,118 @@ def setup_tts(provider=None):
         'target_provider': target_provider,
         **config_info
     }
+
+@track_api_call
+def set_supercode_url(url: str) -> None:
+    """
+    Set the SuperCode TUI API base URL for this session.
+    
+    This function configures the SuperCode server URL that will be used for all
+    SuperCode tasks. The URL persists for the current AgentWorkbook session only.
+    
+    Args:
+        url: The base URL of the SuperCode TUI API (e.g., "http://localhost:8080")
+    
+    Raises:
+        Exception: If the URL format is invalid or the connection fails
+    
+    Examples:
+        import agentworkbook as awb
+        
+        # Set SuperCode URL for local development
+        awb.set_supercode_url("http://localhost:8080")
+        
+        # Set SuperCode URL for remote server
+        awb.set_supercode_url("https://supercode.example.com")
+        
+        # Now all SuperCode tasks will use this URL by default
+        tasks = awb.create_tasks(["Hello world"], client='supercode')
+        
+    Note:
+        - URL must be a valid HTTP/HTTPS URL
+        - Connection is tested when URL is set
+        - URL can be overridden per task using supercode_url parameter
+        - Setting a new URL clears any cached SuperCode client connections
+    """
+    if not url or not isinstance(url, str):
+        raise ValueError("SuperCode URL must be a non-empty string")
+    
+    try:
+        api.setSuperCodeUrl(url)
+    except Exception as e:
+        raise Exception(f"Failed to set SuperCode URL: {str(e)}")
+
+@track_api_call
+def get_supercode_url() -> Optional[str]:
+    """
+    Get the current SuperCode TUI API base URL.
+    
+    Returns:
+        The current SuperCode URL or None if not configured
+    
+    Examples:
+        import agentworkbook as awb
+        
+        # Check current SuperCode URL
+        url = awb.get_supercode_url()
+        if url:
+            print(f"SuperCode URL is set to: {url}")
+        else:
+            print("SuperCode URL is not configured")
+        
+        # Set URL if not configured
+        if not awb.get_supercode_url():
+            awb.set_supercode_url("http://localhost:8080")
+    
+    Note:
+        - Returns None if SuperCode URL has not been configured
+        - URL persists for the current AgentWorkbook session only
+    """
+    return api.getSuperCodeUrl()
+
+@track_api_call
+async def test_supercode_connection(url: Optional[str] = None) -> bool:
+    """
+    Test connection to SuperCode server.
+    
+    This function attempts to connect to the SuperCode TUI API server and
+    verify that it's responsive. Useful for validating configuration before
+    submitting tasks.
+    
+    Args:
+        url: Optional URL to test. If None, uses the currently configured URL
+    
+    Returns:
+        True if connection successful, False otherwise
+    
+    Examples:
+        import agentworkbook as awb
+        
+        # Test current configured URL
+        if await awb.test_supercode_connection():
+            print("SuperCode server is responding")
+        else:
+            print("SuperCode server is not accessible")
+        
+        # Test a specific URL before setting it
+        test_url = "http://localhost:8080"
+        if await awb.test_supercode_connection(test_url):
+            awb.set_supercode_url(test_url)
+            print("SuperCode URL configured successfully")
+        else:
+            print("SuperCode server not available at that URL")
+    
+    Note:
+        - Tests actual HTTP connectivity to the /tui/status endpoint
+        - Uses a short timeout (5 seconds) for quick validation
+        - Does not modify the configured SuperCode URL
+        - Returns False if URL is None and no URL is configured
+    """
+    try:
+        return await api.testSuperCodeConnection(url)
+    except Exception as e:
+        print(f"SuperCode connection test failed: {str(e)}")
+        return False
 
 @track_api_call
 def preview_prompt(prompt: str, workspace_root: Optional[str] = None) -> dict:

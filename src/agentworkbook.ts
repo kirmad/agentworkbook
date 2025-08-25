@@ -9,6 +9,7 @@ import { ICommandExecutor } from './tasks/interfaces';
 import * as telemetry from './utils/telemetry';
 import { Worker } from './tasks/worker';
 import { COMMANDS, UI_REPAINT_TIMEOUTS, TIMEOUTS } from './core/constants';
+import { ClientFactory } from './ai/clientFactory';
 
 export class AgentWorkbookStatus implements RendererInitializationData {
     public mime_type = 'application/x-agentworkbook-status';
@@ -132,14 +133,23 @@ export class AgentWorkbook implements ICommandExecutor {
         }
     }
 
-    createTasks(prompts: string[], mode: string, hooks?: Hooks, client: string = 'roo'): Task[] {
+    createTasks(prompts: string[], mode: string, hooks?: Hooks, client: string = 'roo', supercodeUrl?: string): Task[] {
         this.showRooCodeSidebar();
 
         // Process prompts with flags
         const processedPrompts = processPromptsWithFlags(prompts, this.workingDirectory);
         
-        const clientTyped = client === 'copilot' ? 'copilot' : 'roo';
-        const tasks = processedPrompts.map(prompt => new Task(prompt, mode, hooks, clientTyped));
+        // Validate and convert client type
+        let clientTyped: Task['client'];
+        if (client === 'copilot') {
+            clientTyped = 'copilot';
+        } else if (client === 'supercode') {
+            clientTyped = 'supercode';
+        } else {
+            clientTyped = 'roo'; // Default fallback
+        }
+        
+        const tasks = processedPrompts.map(prompt => new Task(prompt, mode, hooks, clientTyped, supercodeUrl));
         this.tasks.push(...tasks);
         this.schedule_ui_repaint();
 
@@ -371,6 +381,45 @@ export class AgentWorkbook implements ICommandExecutor {
                     applied_count: 0
                 }
             };
+        }
+    }
+
+    /**
+     * Set the SuperCode TUI API base URL for this session
+     * @param url The base URL of the SuperCode TUI API (e.g., "http://localhost:8080")
+     */
+    setSuperCodeUrl(url: string): void {
+        try {
+            ClientFactory.getInstance().setSuperCodeUrl(url);
+            this.outputChannel.appendLine(`SuperCode URL set to: ${url}`);
+        } catch (error) {
+            this.outputChannel.appendLine(`Error setting SuperCode URL: ${error}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Get the current SuperCode TUI API base URL
+     * @returns The current SuperCode URL or undefined if not set
+     */
+    getSuperCodeUrl(): string | undefined {
+        return ClientFactory.getInstance().getSuperCodeUrl();
+    }
+
+    /**
+     * Test connection to SuperCode server
+     * @param url Optional URL to test (uses current URL if not provided)
+     * @returns Promise that resolves to true if connection successful, false otherwise
+     */
+    async testSuperCodeConnection(url?: string): Promise<boolean> {
+        try {
+            const result = await ClientFactory.getInstance().testSuperCodeConnection(url);
+            const testUrl = url || this.getSuperCodeUrl();
+            this.outputChannel.appendLine(`SuperCode connection test ${result ? 'passed' : 'failed'} for ${testUrl}`);
+            return result;
+        } catch (error) {
+            this.outputChannel.appendLine(`SuperCode connection test error: ${error}`);
+            return false;
         }
     }
 

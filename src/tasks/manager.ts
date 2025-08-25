@@ -21,7 +21,7 @@ export const ALL_TASK_STATUSES: TaskStatus[] = [
     'prepared', 'queued', 'running', 'completed', 'asking', 'aborted', 'error'
 ];
 
-export type TaskClient = 'roo' | 'copilot';
+export type TaskClient = 'roo' | 'copilot' | 'supercode';
 
 export class Task {
     readonly id: string;
@@ -29,6 +29,7 @@ export class Task {
     mode: string;
     client: TaskClient;
     hooks: Hooks | undefined;
+    supercodeUrl?: string; // Optional SuperCode URL override for this task
     private _status: TaskStatus = 'prepared';
     private _archived: boolean = false;
 
@@ -45,12 +46,13 @@ export class Task {
     taskLifecycle?: TaskLifecycle;
     
 
-    constructor(prompt: string, mode: string, hooks?: Hooks, client: TaskClient = 'roo') {
+    constructor(prompt: string, mode: string, hooks?: Hooks, client: TaskClient = 'roo', supercodeUrl?: string) {
         this.id = uuidv4().slice(0, 5);
         this.prompt = prompt;
         this.mode = mode;
         this.client = client;
         this.hooks = hooks;
+        this.supercodeUrl = supercodeUrl;
     }
 
     get status(): TaskStatus {

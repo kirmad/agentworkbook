@@ -2,6 +2,7 @@ import { compareVersions } from 'compare-versions';
 import * as vscode from 'vscode';
 
 import { IClineController, ClineController } from './ai/controller';
+import { ClientFactory } from './ai/clientFactory';
 import { AgentWorkbookSerializer } from './notebook/serializer';
 import { PyNotebookController } from './python/controller';
 import { AgentWorkbook } from './agentworkbook';
@@ -29,6 +30,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<AgentW
     // Initialize core components
     const clineController = await initializeClineController();
     const tasks = new Tasks();
+
+    // Initialize client factory with RooCode controller
+    const clientFactory = ClientFactory.getInstance();
+    clientFactory.setRooController(clineController);
 
     const agentWorkbook = new AgentWorkbook(context, outputChannel, clineController, tasks);
     const notebookController = new PyNotebookController(context, outputChannel, agentWorkbook);
