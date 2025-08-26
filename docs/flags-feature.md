@@ -6,24 +6,80 @@ The flags feature allows you to enhance prompts with predefined content by using
 
 ## Usage Examples
 
+### New Recommended Pattern (Explicit Prompt Building)
+
 ```python
-# Create tasks with flags
-tasks = awb.create_tasks(["Your task --incremental"], mode="code")
+# Single task (recommended for most cases)
+raw_prompt = "Your task --incremental --with-tests"
+built_prompt = awb.build_prompt(raw_prompt)
+task = awb.submit_task(built_prompt, mode="code", build_prompt=False)
 
-# Submit tasks with flags
-tasks = awb.submit_tasks(["Your task --with-tests"], mode="code")
+# Multiple tasks
+raw_prompts = [
+    "Your task --cs:think --frontend:component", 
+    "Document the API --docs(api/users.js, User API)"
+]
+built_prompts = awb.build_prompts(raw_prompts)
+tasks = awb.submit_tasks(built_prompts, mode="code", build_prompt=False)
 
-# Submit tasks with hierarchical flags
-tasks = awb.submit_tasks(["Your task --cs:think --frontend:component"], mode="code")
+# Create without submitting (single task)
+raw_prompt = "Build feature --think --docs(src/component.tsx, Button) --with-tests"
+built_prompt = awb.build_prompt(raw_prompt)
+task = awb.create_task(built_prompt, mode="code", build_prompt=False)
+# Submit later when ready
+task.submit()
 
-# Submit tasks with parameterized flags
-tasks = awb.submit_tasks(["Document the API --docs(api/users.js, User API)"], mode="code")
+# Wait for completion
+result = await awb.wait_for_task(task)  # Single task
+results = await awb.wait_for_tasks(tasks)  # Multiple tasks
+```
 
-# Mixed usage - regular, hierarchical, and parameterized flags
-tasks = awb.submit_tasks(["Build feature --think --docs(src/component.tsx, Button) --with-tests"], mode="code")
+### Legacy Pattern (Backward Compatible)
 
-# Wait for tasks to complete
-results = await awb.wait_for_tasks(tasks)
+```python
+# Old way - still works for backward compatibility
+tasks = awb.create_tasks(["Your task --incremental"], mode="code")  # Multiple tasks
+tasks = awb.submit_tasks(["Your task --with-tests"], mode="code")   # Multiple tasks
+
+# Single task equivalents (also work with old pattern)
+task = awb.create_task("Your task --incremental", mode="code")       # Single task
+task = awb.submit_task("Your task --with-tests", mode="code")        # Single task
+```
+
+## Why Use build_prompt()?
+
+The new `build_prompt()` approach offers several advantages:
+
+1. **Separation of Concerns**: Prompt building is separate from task creation
+2. **Preview Capability**: You can see the final prompt before submitting
+3. **Debugging**: Easy to inspect what flags were processed
+4. **Template Flexibility**: Templates can build complex prompts step by step
+5. **Reusability**: Built prompts can be reused across multiple task submissions
+
+### Example: Complex Prompt Building
+
+```python
+import agentworkbook as awb
+
+# Start with base prompt
+base_prompt = "Create a React login component"
+
+# Add context-specific flags
+if project_type == "enterprise":
+    enhanced_prompt = f"{base_prompt} --cs:think --security:audit --with-tests"
+else:
+    enhanced_prompt = f"{base_prompt} --frontend:component --with-tests"
+
+# Build the final prompt
+final_prompt = awb.build_prompt(enhanced_prompt)
+
+# Preview the result (optional)
+print("Final prompt will be:")
+print(final_prompt)
+
+# Submit when ready (single or multiple tasks)
+task = awb.submit_task(final_prompt, mode="code", build_prompt=False)    # Single task
+tasks = awb.submit_tasks([final_prompt], mode="code", build_prompt=False)  # Multiple tasks
 ```
 
 ## How It Works

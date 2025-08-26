@@ -133,11 +133,51 @@ export class AgentWorkbook implements ICommandExecutor {
         }
     }
 
-    createTasks(prompts: string[], mode: string, hooks?: Hooks, client: string = 'roo', supercodeUrl?: string): Task[] {
+    /**
+     * Build a single prompt by processing flags without creating tasks.
+     * 
+     * @param prompt Raw prompt string containing flags
+     * @param workspaceRoot Optional workspace root path for flag discovery
+     * @returns Processed prompt string with flags applied
+     */
+    buildPrompt(prompt: string, workspaceRoot?: string): string {
+        const effectiveWorkspaceRoot = workspaceRoot || this.workingDirectory;
+        return processPromptWithFlags(prompt, effectiveWorkspaceRoot);
+    }
+
+    /**
+     * Build multiple prompts by processing flags without creating tasks.
+     * 
+     * @param prompts List of raw prompt strings containing flags
+     * @param workspaceRoot Optional workspace root path for flag discovery
+     * @returns List of processed prompt strings with flags applied
+     */
+    buildPrompts(prompts: string[], workspaceRoot?: string): string[] {
+        const effectiveWorkspaceRoot = workspaceRoot || this.workingDirectory;
+        return processPromptsWithFlags(prompts, effectiveWorkspaceRoot);
+    }
+
+    /**
+     * Create a single task from a prompt.
+     * 
+     * @param prompt Prompt string (can be raw or pre-processed)
+     * @param mode Task mode ('code' or other modes)
+     * @param hooks Optional hooks for task lifecycle
+     * @param client Client type ('roo', 'copilot', 'supercode')
+     * @param supercodeUrl Optional SuperCode URL
+     * @param buildPrompt Whether to build prompt by processing flags (True for backward compatibility, False for pre-processed prompts)
+     * @returns Created Task object
+     */
+    createTask(prompt: string, mode: string, hooks?: Hooks, client: string = 'roo', supercodeUrl?: string, buildPrompt: boolean = true): Task {
+        const tasks = this.createTasks([prompt], mode, hooks, client, supercodeUrl, buildPrompt);
+        return tasks[0];
+    }
+
+    createTasks(prompts: string[], mode: string, hooks?: Hooks, client: string = 'roo', supercodeUrl?: string, buildPrompt: boolean = true): Task[] {
         this.showRooCodeSidebar();
 
-        // Process prompts with flags
-        const processedPrompts = processPromptsWithFlags(prompts, this.workingDirectory);
+        // Process prompts with flags only if requested (for backward compatibility)
+        const finalPrompts = buildPrompt ? processPromptsWithFlags(prompts, this.workingDirectory) : prompts;
         
         // Validate and convert client type
         let clientTyped: Task['client'];
@@ -149,7 +189,7 @@ export class AgentWorkbook implements ICommandExecutor {
             clientTyped = 'roo'; // Default fallback
         }
         
-        const tasks = processedPrompts.map(prompt => new Task(prompt, mode, hooks, clientTyped, supercodeUrl));
+        const tasks = finalPrompts.map(prompt => new Task(prompt, mode, hooks, clientTyped, supercodeUrl));
         this.tasks.push(...tasks);
         this.schedule_ui_repaint();
 

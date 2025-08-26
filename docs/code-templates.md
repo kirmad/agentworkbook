@@ -49,9 +49,17 @@ language: "python"
 code: |
   import agentworkbook as awb
   
-  # Create a new task
-  task = awb.create_tasks(["Your task description here"], mode="code")
-  print(f"Created task: {task[0].id}")
+  # Build prompt with flag processing first
+  raw_prompt = "Your task description here --with-tests --docs(api.md)"
+  built_prompt = awb.build_prompt(raw_prompt)
+  
+  # Single task (recommended for simple cases)
+  task = awb.submit_task(built_prompt, mode="code", build_prompt=False)
+  print(f"Created task: {task.id}")
+  
+  # Or multiple tasks if needed
+  # tasks = awb.submit_tasks([built_prompt], mode="code", build_prompt=False)
+  # print(f"Created tasks: {[t.id for t in tasks]}")
 ```
 
 ### Data Analysis Setup

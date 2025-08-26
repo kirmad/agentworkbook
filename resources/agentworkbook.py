@@ -182,14 +182,108 @@ def live_preview():
     return api.livePreview()
 
 @track_api_call
-def create_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None) -> list[Task]:
+def build_prompt(prompt: str, workspace_root: Optional[str] = None) -> str:
+    """
+    Build a prompt by processing flags without creating tasks.
+    
+    Args:
+        prompt: The raw prompt string containing flags
+        workspace_root: Optional workspace root path for flag discovery
+    
+    Returns:
+        The processed prompt string with flags applied
+    """
+    return api.buildPrompt(prompt, workspace_root)
+
+@track_api_call
+def build_prompts(prompts: list[str], workspace_root: Optional[str] = None) -> list[str]:
+    """
+    Build multiple prompts by processing flags without creating tasks.
+    
+    Args:
+        prompts: List of raw prompt strings containing flags
+        workspace_root: Optional workspace root path for flag discovery
+    
+    Returns:
+        List of processed prompt strings with flags applied
+    """
+    return api.buildPrompts(prompts, workspace_root)
+
+@track_api_call
+def create_task(prompt: str, mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None, build_prompt: bool = True) -> Task:
+    """
+    Create a single task from a prompt.
+    
+    Args:
+        prompt: Prompt string (can be raw or pre-processed)
+        mode: Task mode ('code' or other modes)
+        hooks: Optional hooks for task lifecycle
+        client: Client type ('roo', 'copilot', 'supercode')
+        supercode_url: Optional SuperCode URL
+        build_prompt: Whether to build prompt by processing flags (True for backward compatibility, False for pre-processed prompts)
+    
+    Returns:
+        Created Task object
+    """
+    tasks = create_tasks([prompt], mode, hooks, client, supercode_url, build_prompt)
+    return tasks[0]
+
+@track_api_call
+def create_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None, build_prompt: bool = True) -> list[Task]:
+    """
+    Create tasks from prompts.
+    
+    Args:
+        prompts: List of prompt strings (can be raw or pre-processed)
+        mode: Task mode ('code' or other modes)
+        hooks: Optional hooks for task lifecycle
+        client: Client type ('roo', 'copilot', 'supercode')
+        supercode_url: Optional SuperCode URL
+        build_prompt: Whether to build prompts by processing flags (True for backward compatibility, False for pre-processed prompts)
+    
+    Returns:
+        List of created Task objects
+    """
     hooks = None if hooks is None else hooks._hooks
-    tasks = api.createTasks(prompts, mode, hooks, client, supercode_url)
+    tasks = api.createTasks(prompts, mode, hooks, client, supercode_url, build_prompt)
     return [Task(task) for task in tasks]
 
 @track_api_call
-def submit_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None) -> list[Task]:
-    tasks = create_tasks(prompts, mode, hooks, client, supercode_url)
+def submit_task(prompt: str, mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None, build_prompt: bool = True) -> Task:
+    """
+    Create and submit a single task from a prompt.
+    
+    Args:
+        prompt: Prompt string (can be raw or pre-processed)
+        mode: Task mode ('code' or other modes)
+        hooks: Optional hooks for task lifecycle
+        client: Client type ('roo', 'copilot', 'supercode')
+        supercode_url: Optional SuperCode URL
+        build_prompt: Whether to build prompt by processing flags (True for backward compatibility, False for pre-processed prompts)
+    
+    Returns:
+        Submitted Task object
+    """
+    tasks = submit_tasks([prompt], mode, hooks, client, supercode_url, build_prompt)
+    return tasks[0]
+
+@track_api_call
+def submit_tasks(prompts: list[str], mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None, build_prompt: bool = True) -> list[Task]:
+    """
+    Create and submit tasks from prompts.
+    
+    Args:
+        prompts: List of prompt strings (can be raw or pre-processed)
+        mode: Task mode ('code' or other modes)
+        hooks: Optional hooks for task lifecycle
+        client: Client type ('roo', 'copilot', 'supercode')
+        supercode_url: Optional SuperCode URL
+        build_prompt: Whether to build prompts by processing flags (True for backward compatibility, False for pre-processed prompts)
+    
+    Returns:
+        List of submitted Task objects
+    """
+    tasks = create_tasks(prompts, mode, hooks, client, supercode_url, build_prompt)
     for task in tasks:
         task.submit()
     return tasks

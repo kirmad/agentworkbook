@@ -125,16 +125,72 @@ class Tasks extends Array<Task> {
 
 ### Task Creation and Execution
 
+#### Single Task Methods
+
 ```typescript
-// Create tasks with optional client selection
+// Create a single task
+function create_task(
+    prompt: string, 
+    mode: string = "code",
+    hooks?: Hooks,
+    client?: "roo" | "copilot" | "supercode",
+    supercode_url?: string,
+    build_prompt?: boolean  // True for raw prompts, False for pre-processed
+): Task
+
+// Create and submit a single task
+function submit_task(
+    prompt: string, 
+    mode: string = "code",
+    hooks?: Hooks,
+    client?: "roo" | "copilot" | "supercode",
+    supercode_url?: string,
+    build_prompt?: boolean
+): Task
+```
+
+#### Multiple Task Methods
+
+```typescript
+// Create multiple tasks
 function create_tasks(
     prompts: string[], 
     mode: string = "code",
-    client?: "roo" | "copilot"  // Optional, defaults to "roo"
+    hooks?: Hooks,
+    client?: "roo" | "copilot" | "supercode",
+    supercode_url?: string,
+    build_prompt?: boolean
 ): Task[]
 
-// Submit tasks for execution
+// Create and submit multiple tasks
+function submit_tasks(
+    prompts: string[], 
+    mode: string = "code",
+    hooks?: Hooks,
+    client?: "roo" | "copilot" | "supercode",
+    supercode_url?: string,
+    build_prompt?: boolean
+): Task[]
+
+// Submit existing tasks by ID (legacy)
 function submit_tasks(task_ids: string[]): void
+```
+
+#### Prompt Building Methods
+
+```typescript
+// Build single prompt by processing flags
+function build_prompt(
+    prompt: string,
+    workspace_root?: string
+): string
+
+// Build multiple prompts by processing flags
+function build_prompts(
+    prompts: string[],
+    workspace_root?: string
+): string[]
+```
 
 // Wait for single task completion
 async function wait_for_task(
@@ -156,23 +212,32 @@ function respond_to_task(task_id: string, response: string): void
 
 #### Usage Examples
 
-```typescript
-// Create tasks with RooCode (default)
-const tasks = awb.create_tasks(["Implement login"], "code");
+```python
+# Single task examples
+task = awb.create_task("Implement login API --with-tests", "code")  # Create only
+task = awb.submit_task("Create user model", "code")                 # Create and submit
 
-// Create tasks with Copilot
-const tasks = awb.create_tasks(["Create UI component"], "code", "copilot");
+# Multiple task examples  
+tasks = awb.create_tasks(["Task 1", "Task 2"], "code")  # Create only
+tasks = awb.submit_tasks(["Task 1", "Task 2"], "code")  # Create and submit
 
-// Submit and wait for completion
-awb.submit_tasks(tasks.map(t => t.id));
-const results = await awb.wait_for_tasks(tasks);
+# Recommended pattern with explicit prompt building
+raw_prompt = "Create API --docs(api.md) --with-tests"
+built_prompt = awb.build_prompt(raw_prompt)
+task = awb.submit_task(built_prompt, "code", build_prompt=False)
 
-// Wait with timeout
-try {
-    const result = await awb.wait_for_task(tasks[0], 300); // 5 minutes
-} catch (error) {
-    console.error("Task timed out");
-}
+# Multiple prompts with building
+raw_prompts = ["Task 1 --flag1", "Task 2 --flag2"]
+built_prompts = awb.build_prompts(raw_prompts)
+tasks = awb.submit_tasks(built_prompts, "code", build_prompt=False)
+
+# Wait for completion
+result = await awb.wait_for_task(task)     # Single task
+results = await awb.wait_for_tasks(tasks)  # Multiple tasks
+
+# Different clients
+task = awb.submit_task("Create UI", "code", client="copilot")
+task = awb.submit_task("Deploy app", "code", client="supercode", supercode_url="http://localhost:8080")
 ```
 
 ### AI Integration

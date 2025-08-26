@@ -95,14 +95,13 @@
    ```python
    import agentworkbook as awb
    
-   # Create a simple task
-   tasks = awb.create_tasks([
-       "Create a Python function to calculate fibonacci numbers"
-   ], mode="code")
+   # Single task (recommended for simple cases)
+   raw_prompt = "Create a Python function to calculate fibonacci numbers --with-tests"
+   built_prompt = awb.build_prompt(raw_prompt)
+   task = awb.submit_task(built_prompt, mode="code", build_prompt=False)
    
-   # Submit and wait for completion
-   awb.submit_tasks(task_ids=[t.id for t in tasks])
-   result = await awb.wait_for_task(tasks[0])
+   # Wait for completion
+   result = await awb.wait_for_task(task)
    ```
 
 3. **Watch the magic:**
