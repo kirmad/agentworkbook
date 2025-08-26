@@ -17,6 +17,8 @@ import { FlagDiscoveryService } from './utils/flagDiscovery';
 import { FlagCompletionProvider, FlagParameterCompletionProvider } from './utils/flagCompletionProvider';
 import { FlagDiagnosticProvider, FlagCodeActionProvider } from './utils/flagDiagnosticProvider';
 import { FilePathCompletionProvider } from './utils/filePathCompletionProvider';
+import { CommandDiscoveryService } from './utils/commandDiscovery';
+import { CommandCompletionProvider, CommandArgumentCompletionProvider } from './utils/commandCompletionProvider';
 
 export { AgentWorkbook, Task };
 
@@ -50,6 +52,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<AgentW
 
     // Initialize and register flag completion providers
     await registerFlagCompletionProviders(context);
+
+    // Initialize and register command completion providers
+    await registerCommandCompletionProviders(context);
 
     // Initialize and register file path completion provider
     await registerFilePathCompletionProvider(context);
@@ -240,6 +245,56 @@ async function registerFlagCompletionProviders(context: vscode.ExtensionContext)
 
     } catch (error) {
         console.error('Error registering flag completion providers:', error);
+    }
+}
+
+/**
+ * Register command completion providers for notebook cells
+ */
+async function registerCommandCompletionProviders(context: vscode.ExtensionContext): Promise<void> {
+    try {
+        // Initialize the command discovery service
+        const commandDiscoveryService = CommandDiscoveryService.getInstance();
+        commandDiscoveryService.initialize(context);
+
+        // Create completion providers
+        const commandCompletionProvider = new CommandCompletionProvider();
+        const commandArgumentCompletionProvider = new CommandArgumentCompletionProvider();
+
+        // Define document selector for agentworkbook files and notebook cells
+        const documentSelector: vscode.DocumentSelector = [
+            {
+                notebookType: 'agentworkbook',
+                language: '*' // Support all languages in agentworkbook notebooks
+            },
+            {
+                pattern: '**/*.agentworkbook' // Support regular agentworkbook files
+            }
+        ];
+
+        // Register command completion provider
+        // No trigger characters - let it work on any completion request (like flags)
+        const commandCompletionDisposable = vscode.languages.registerCompletionItemProvider(
+            documentSelector,
+            commandCompletionProvider
+        );
+
+        // Register argument completion provider
+        // Triggers on space after command name
+        const argumentCompletionDisposable = vscode.languages.registerCompletionItemProvider(
+            documentSelector,
+            commandArgumentCompletionProvider,
+            ' ' // Trigger character for arguments
+        );
+
+        // Add to subscriptions for proper cleanup
+        context.subscriptions.push(
+            commandCompletionDisposable,
+            argumentCompletionDisposable
+        );
+
+    } catch (error) {
+        console.error('Error registering command completion providers:', error);
     }
 }
 

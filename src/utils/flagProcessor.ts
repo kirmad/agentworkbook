@@ -250,7 +250,7 @@ export function processPromptWithFlags(prompt: string, workspaceRoot?: string): 
         
         // Format the flag content
         const paramInfo = flag.parameters.length > 0 ? ` (${flag.parameters.join(', ')})` : '';
-        const formattedContent = `\n\n--- Flag: --${flag.name}${paramInfo} ---\n${content}`;
+        const formattedContent = `\n${content}`;
         
         // Handle placement
         switch (placement) {
@@ -301,7 +301,7 @@ export function processPromptWithFlagsLegacy(prompt: string, workspaceRoot?: str
         const flagData = loadFlagContent(flag.path, flag.parameters, workspaceRoot);
         if (flagData) {
             const paramInfo = flag.parameters.length > 0 ? ` (${flag.parameters.join(', ')})` : '';
-            flagContents.push(`\n\n--- Flag: --${flag.name}${paramInfo} ---\n${flagData.content}`);
+            flagContents.push(`\n${flagData.content}`);
         }
     }
     

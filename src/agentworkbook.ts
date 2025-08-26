@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { IClineController } from './ai/controller';
 import { processPromptsWithFlags, parseFlags, processPromptWithFlags } from './utils/flagProcessor';
+import { processPromptsWithAll } from './utils/commandProcessor';
 import { Hooks, HookRun } from './utils/hooks';
 import { MessageFromRenderer, MessageToRenderer, RendererInitializationData, RendererTask } from './renderer/interface';
 import { CommandRun, shell_command } from './utils/shellCommand';
@@ -134,27 +135,28 @@ export class AgentWorkbook implements ICommandExecutor {
     }
 
     /**
-     * Build a single prompt by processing flags without creating tasks.
+     * Build a single prompt by processing both commands and flags without creating tasks.
      * 
-     * @param prompt Raw prompt string containing flags
-     * @param workspaceRoot Optional workspace root path for flag discovery
-     * @returns Processed prompt string with flags applied
+     * @param prompt Raw prompt string containing commands and flags
+     * @param workspaceRoot Optional workspace root path for command and flag discovery
+     * @returns Processed prompt string with commands and flags applied
      */
-    buildPrompt(prompt: string, workspaceRoot?: string): string {
+    async buildPrompt(prompt: string, workspaceRoot?: string): Promise<string> {
         const effectiveWorkspaceRoot = workspaceRoot || this.workingDirectory;
-        return processPromptWithFlags(prompt, effectiveWorkspaceRoot);
+        const processedPrompts = await processPromptsWithAll([prompt], effectiveWorkspaceRoot);
+        return processedPrompts[0];
     }
 
     /**
-     * Build multiple prompts by processing flags without creating tasks.
+     * Build multiple prompts by processing both commands and flags without creating tasks.
      * 
-     * @param prompts List of raw prompt strings containing flags
-     * @param workspaceRoot Optional workspace root path for flag discovery
-     * @returns List of processed prompt strings with flags applied
+     * @param prompts List of raw prompt strings containing commands and flags
+     * @param workspaceRoot Optional workspace root path for command and flag discovery
+     * @returns List of processed prompt strings with commands and flags applied
      */
-    buildPrompts(prompts: string[], workspaceRoot?: string): string[] {
+    async buildPrompts(prompts: string[], workspaceRoot?: string): Promise<string[]> {
         const effectiveWorkspaceRoot = workspaceRoot || this.workingDirectory;
-        return processPromptsWithFlags(prompts, effectiveWorkspaceRoot);
+        return await processPromptsWithAll(prompts, effectiveWorkspaceRoot);
     }
 
     /**

@@ -182,32 +182,32 @@ def live_preview():
     return api.livePreview()
 
 @track_api_call
-def build_prompt(prompt: str, workspace_root: Optional[str] = None) -> str:
+async def build_prompt(prompt: str, workspace_root: Optional[str] = None) -> str:
     """
-    Build a prompt by processing flags without creating tasks.
+    Build a prompt by processing both commands and flags without creating tasks.
     
     Args:
-        prompt: The raw prompt string containing flags
-        workspace_root: Optional workspace root path for flag discovery
+        prompt: The raw prompt string containing commands and flags
+        workspace_root: Optional workspace root path for command and flag discovery
     
     Returns:
-        The processed prompt string with flags applied
+        The processed prompt string with commands and flags applied
     """
-    return api.buildPrompt(prompt, workspace_root)
+    return await api.buildPrompt(prompt, workspace_root)
 
 @track_api_call
-def build_prompts(prompts: list[str], workspace_root: Optional[str] = None) -> list[str]:
+async def build_prompts(prompts: list[str], workspace_root: Optional[str] = None) -> list[str]:
     """
-    Build multiple prompts by processing flags without creating tasks.
+    Build multiple prompts by processing both commands and flags without creating tasks.
     
     Args:
-        prompts: List of raw prompt strings containing flags
-        workspace_root: Optional workspace root path for flag discovery
+        prompts: List of raw prompt strings containing commands and flags
+        workspace_root: Optional workspace root path for command and flag discovery
     
     Returns:
-        List of processed prompt strings with flags applied
+        List of processed prompt strings with commands and flags applied
     """
-    return api.buildPrompts(prompts, workspace_root)
+    return await api.buildPrompts(prompts, workspace_root)
 
 @track_api_call
 def create_task(prompt: str, mode: str = 'code', hooks: Optional[Hooks] = None, client: str = 'roo', supercode_url: Optional[str] = None, build_prompt: bool = True) -> Task:

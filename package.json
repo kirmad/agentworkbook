@@ -4,7 +4,7 @@
   "displayName": "AgentWorkbook - AI Task Manager & Notebook",
   "description": "AI-powered notebook extension for intelligent task management with RooCode & Copilot integration, Python execution, visual task queues, and advanced flag system for streamlined development workflows.",
   "repository": "github:kirmad/agentworkbook",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "keywords": [
     "notebook",
     "python",
