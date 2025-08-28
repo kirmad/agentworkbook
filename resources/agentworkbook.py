@@ -6,6 +6,7 @@ import _agentworkbook as api  # type: ignore
 
 import functools
 import inspect
+import json
 import pyodide
 import time
 from typing import Any, Callable, Coroutine, Dict, Optional, TypeVar, Union, cast, TYPE_CHECKING
@@ -690,6 +691,219 @@ def _talk_web(msg: str) -> bool:
         return False
 
 @track_api_call
+async def ntfy(message: str, topic: str = None, server: str = None, priority: int = None, tags: list = None, title: str = None, **kwargs) -> bool:
+    """
+    Send notifications using ntfy (https://ntfy.sh).
+    
+    This function sends push notifications to devices via ntfy, a simple HTTP-based 
+    pub-sub notification service. Supports custom servers, topics, priorities, and tags.
+    
+    Args:
+        message (str): The notification message content. Required.
+        topic (str, optional): The ntfy topic/channel. Uses extension config if None.
+        server (str, optional): The ntfy server URL. Defaults to "https://ntfy.sh".
+        priority (int, optional): Message priority (1=min, 2=low, 3=default, 4=high, 5=max).
+        tags (list, optional): List of tags for the notification (e.g., ["warning", "server"]).
+        title (str, optional): Notification title. Uses message preview if None.
+        **kwargs: Additional ntfy parameters (delay, click, attach, etc.).
+    
+    Returns:
+        bool: True if notification sent successfully, False otherwise.
+    
+    Configuration:
+        Set default values in VS Code settings:
+        - notification.ntfy.server: Default server URL
+        - notification.ntfy.topic: Default topic/channel  
+        - notification.ntfy.priority: Default priority level
+        - notification.ntfy.tags: Default tags as comma-separated string
+    
+    Examples:
+        import agentworkbook as awb
+        
+        # Basic notification (uses config defaults)
+        await awb.ntfy("Build completed successfully!")
+        
+        # Custom topic and priority
+        await awb.ntfy("Deployment failed", topic="alerts", priority=5)
+        
+        # With custom server and tags
+        await awb.ntfy(
+            "Server maintenance starting", 
+            server="https://my-ntfy.example.com",
+            topic="ops",
+            tags=["maintenance", "scheduled"],
+            title="Maintenance Alert"
+        )
+        
+        # With additional parameters
+        await awb.ntfy(
+            "Check the dashboard", 
+            topic="updates",
+            click="https://dashboard.example.com",
+            delay="5m"  # Delay 5 minutes
+        )
+    
+    Note:
+        - Compatible with ntfy.sh and self-hosted ntfy servers
+        - Uses HTTP POST requests for reliability
+        - Supports all ntfy features: priorities, tags, delays, attachments, etc.
+        - Falls back gracefully with error messages if server unavailable
+    """
+    # Input validation
+    if not message or not isinstance(message, str):
+        print("[ERROR] ntfy: Please provide a valid message string")
+        return False
+    
+    try:
+        # Get configuration values
+        config_server = get_configuration('notification.ntfy.server') or "https://ntfy.sh"
+        config_topic = get_configuration('notification.ntfy.topic')
+        config_priority = get_configuration('notification.ntfy.priority') or 3
+        config_tags_str = get_configuration('notification.ntfy.tags') or ""
+        
+        # Parse config tags from comma-separated string
+        config_tags = [tag.strip() for tag in config_tags_str.split(',') if tag.strip()] if config_tags_str else []
+        
+        # Use provided values or fall back to config
+        final_server = server or config_server
+        final_topic = topic or config_topic
+        final_priority = priority if priority is not None else config_priority
+        final_tags = tags if tags is not None else config_tags
+        final_title = title
+        
+        # Validate required parameters
+        if not final_topic:
+            print("[ERROR] ntfy: No topic specified. Set 'notification.ntfy.topic' in VS Code settings or provide topic parameter")
+            return False
+        
+        # Validate priority range
+        if not isinstance(final_priority, int) or final_priority < 1 or final_priority > 5:
+            print(f"[WARNING] ntfy: Invalid priority {final_priority}, using default (3)")
+            final_priority = 3
+        
+        # Build the ntfy URL
+        if not final_server.startswith(('http://', 'https://')):
+            final_server = f"https://{final_server}"
+        
+        # Remove trailing slash
+        final_server = final_server.rstrip('/')
+        ntfy_url = f"{final_server}/{final_topic}"
+        
+        # Build headers
+        headers = {
+            'Priority': str(final_priority)
+        }
+        
+        if final_title:
+            headers['Title'] = final_title
+        
+        if final_tags:
+            # Join tags with comma
+            headers['Tags'] = ','.join(str(tag) for tag in final_tags)
+        
+        # Add additional kwargs as headers (for ntfy features like Delay, Click, etc.)
+        for key, value in kwargs.items():
+            # Convert key to proper header format (capitalize first letter)
+            header_key = key.capitalize()
+            headers[header_key] = str(value)
+        
+        # Display notification info
+        print(f"[NTFY] Sending to {final_server}")
+        print(f"   [TOPIC] {final_topic}")
+        print(f"   [PRIORITY] {final_priority}/5")
+        if final_tags:
+            print(f"   [TAGS] {', '.join(final_tags)}")
+        if final_title:
+            print(f"   [TITLE] {final_title}")
+        
+        # Use TypeScript layer for HTTP request instead of shell curl
+        # This is more reliable across different platforms and environments
+        try:
+            result = await api.makeHttpRequest({
+                'method': 'POST',
+                'url': ntfy_url,
+                'headers': headers,
+                'body': message,
+                'timeout': 10000  # 10 second timeout
+            })
+            
+            # Check if the request was successful
+            if result.get('success', False):
+                print("[OK] ntfy: Notification sent successfully!")
+                return True
+            else:
+                error_msg = result.get('error', 'Unknown error')
+                status_code = result.get('statusCode', 'unknown')
+                print(f"[ERROR] ntfy: Failed to send notification (status: {status_code})")
+                print(f"   Error details: {error_msg}")
+                return False
+                
+        except Exception as http_error:
+            # Fallback to fetch API if makeHttpRequest is not available
+            print("[INFO] ntfy: Using fetch API fallback...")
+            
+            # Use JavaScript fetch API through the browser environment
+            try:
+                # Build JavaScript fetch request
+                js_headers = {}
+                for key, value in headers.items():
+                    js_headers[key] = value
+                
+                # Create fetch request in JavaScript
+                fetch_code = f"""
+                (async function() {{
+                    try {{
+                        const response = await fetch({repr(ntfy_url)}, {{
+                            method: 'POST',
+                            headers: {json.dumps(js_headers)},
+                            body: {repr(message)}
+                        }});
+                        
+                        if (response.ok) {{
+                            return {{ success: true, status: response.status }};
+                        }} else {{
+                            const errorText = await response.text();
+                            return {{ 
+                                success: false, 
+                                status: response.status, 
+                                error: errorText 
+                            }};
+                        }}
+                    }} catch (error) {{
+                        return {{ 
+                            success: false, 
+                            error: error.message 
+                        }};
+                    }}
+                }})()
+                """
+                
+                # Execute JavaScript in the browser context
+                import pyodide.code
+                result = await pyodide.code.run_js(fetch_code)
+                
+                if result and result.get('success'):
+                    print("[OK] ntfy: Notification sent successfully!")
+                    return True
+                else:
+                    error_msg = result.get('error', 'Fetch request failed')
+                    status = result.get('status', 'unknown')
+                    print(f"[ERROR] ntfy: Failed to send notification (status: {status})")
+                    print(f"   Error details: {error_msg}")
+                    return False
+                    
+            except Exception as fetch_error:
+                print(f"[ERROR] ntfy: Both HTTP methods failed")
+                print(f"   Primary error: {str(http_error)}")
+                print(f"   Fallback error: {str(fetch_error)}")
+                return False
+        
+    except Exception as e:
+        print(f"[ERROR] ntfy: Exception occurred - {str(e)}")
+        return False
+
+
+@track_api_call
 async def talk(msg, voice=None, model=None, provider=None):
     """
     Convert text to speech using configured TTS provider.
@@ -846,6 +1060,98 @@ def _display_azure_config() -> dict:
             'format': audio_format
         }
     }
+
+@track_api_call
+def setup_ntfy():
+    """
+    Display current ntfy configuration and setup guidance.
+    
+    This function shows the current ntfy notification settings and provides
+    guidance on how to configure them through VS Code settings.
+    
+    Returns:
+        dict: Current ntfy configuration information
+    
+    Examples:
+        import agentworkbook as awb
+        awb.setup_ntfy()  # Show current ntfy configuration
+    
+    Configuration Steps:
+        1. Open VS Code Settings: File > Preferences > Settings
+        2. Search for "agentworkbook" or navigate to Extensions > AgentWorkbook
+        3. Configure ntfy settings:
+           - notification.ntfy.server: Your ntfy server URL (default: https://ntfy.sh)
+           - notification.ntfy.topic: Default topic/channel name
+           - notification.ntfy.priority: Default priority (1-5, default: 3)  
+           - notification.ntfy.tags: Default tags (comma-separated)
+    
+    Note:
+        At minimum, you need to set the 'topic' to start using ntfy notifications.
+    """
+    print("[NTFY] ntfy Notification Configuration")
+    print("=" * 50)
+    
+    # Get current configuration
+    config_server = get_configuration('notification.ntfy.server') or "https://ntfy.sh"
+    config_topic = get_configuration('notification.ntfy.topic')
+    config_priority = get_configuration('notification.ntfy.priority') or 3
+    config_tags_str = get_configuration('notification.ntfy.tags') or ""
+    
+    # Parse tags
+    config_tags = [tag.strip() for tag in config_tags_str.split(',') if tag.strip()] if config_tags_str else []
+    
+    print(f"[CONFIG] Current ntfy Settings:")
+    print(f"   [SERVER] Server: {config_server}")
+    print(f"   [TOPIC] Topic: {config_topic or '[ERROR] Not configured'}")
+    print(f"   [PRIORITY] Priority: {config_priority}/5")
+    print(f"   [TAGS] Tags: {', '.join(config_tags) if config_tags else 'None'}")
+    
+    # Configuration status
+    is_configured = bool(config_topic)
+    print(f"\n[STATUS] Configuration: {'[OK] Ready' if is_configured else '[ERROR] Incomplete'}")
+    
+    if not config_topic:
+        print("\n[REQUIRED] Missing Configuration:")
+        print("   ❌ notification.ntfy.topic - Required to send notifications")
+        print("\n[SETUP] Quick Setup Steps:")
+        print("   1. Open VS Code Settings (Ctrl/Cmd + ,)")
+        print("   2. Search for 'agentworkbook ntfy'")
+        print("   3. Set 'Notification › Ntfy › Topic' to your desired topic name")
+        print("   4. Optionally configure server, priority, and tags")
+    else:
+        print("\n[READY] Configuration complete! Ready to send notifications.")
+    
+    print(f"\n[TEST] Test notification:")
+    if config_topic:
+        print(f"   await awb.ntfy('Test notification from AgentWorkbook!')")
+    else:
+        print(f"   await awb.ntfy('Test message', topic='your-topic-name')")
+    
+    print(f"\n[EXAMPLES] Usage examples:")
+    print(f"   # Basic notification")
+    print(f"   await awb.ntfy('Build completed!')")
+    print(f"   ")
+    print(f"   # High priority with tags")
+    print(f"   await awb.ntfy('System alert!', priority=5, tags=['warning', 'system'])")
+    print(f"   ")
+    print(f"   # Custom server and topic")
+    print(f"   await awb.ntfy('Hello', server='https://my-ntfy.com', topic='alerts')")
+    
+    print(f"\n[INFO] Supported Features:")
+    print(f"   - Priorities: 1(min), 2(low), 3(default), 4(high), 5(max)")
+    print(f"   - Tags: For categorization and filtering")
+    print(f"   - Custom servers: Self-hosted ntfy instances")
+    print(f"   - Advanced: delay, click URLs, attachments (via kwargs)")
+    
+    return {
+        'server': config_server,
+        'topic': config_topic,
+        'priority': config_priority,
+        'tags': config_tags,
+        'configured': is_configured,
+        'missing_config': [] if is_configured else ['topic']
+    }
+
 
 @track_api_call 
 def setup_tts(provider=None):

@@ -7,6 +7,7 @@ import * as telemetry from '../utils/telemetry';
 import { shellCommandProcessor } from '../utils/shellCommandProcessor';
 import { ClientFactory } from '../ai/clientFactory';
 import { ITaskClient, ClientConfig, ClientError } from '../ai/clientTypes';
+import { SuperCodeClient } from '../ai/supercodeClient';
 
 
 export class Worker {
@@ -276,32 +277,47 @@ export class Worker {
             this.outputChannel.appendLine(`Submitting SuperCode task #${task.id}...`);
             await client.submitTask(task);
 
-            // Poll for completion
-            this.outputChannel.appendLine(`Polling SuperCode task #${task.id} for completion...`);
+            // Wait 10 seconds before starting to poll
+            this.outputChannel.appendLine(`Waiting 5 seconds before polling SuperCode task #${task.id}...`);
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            // Poll for completion - specifically wait for client status to be 'ready'
+            this.outputChannel.appendLine(`Polling SuperCode task #${task.id} for ready status...`);
             let attempts = 0;
             const maxAttempts = 300; // 5 minutes at 1-second intervals
             
+            // Cast client to SuperCodeClient to access getClientStatus method
+            const supercodeClient = client as SuperCodeClient;
+            if (typeof supercodeClient.getClientStatus !== 'function') {
+                throw new Error('SuperCode client does not support getClientStatus method');
+            }
+            
             while (attempts < maxAttempts) {
-                const status = await client.getTaskStatus(task);
-                
-                if (status === 'completed') {
-                    // Run oncomplete hook
-                    const hookCompleteResult = await task.runHook('oncomplete');
-                    task.status = hookCompleteResult.failed ? 'error' : 'completed';
-                    this.outputChannel.appendLine(`SuperCode task #${task.id} completed successfully`);
-                    return;
-                }
-                
-                if (status === 'error') {
-                    task.status = 'error';
-                    this.outputChannel.appendLine(`SuperCode task #${task.id} failed with error status`);
-                    return;
-                }
-                
-                if (status === 'aborted') {
-                    task.status = 'aborted';
-                    this.outputChannel.appendLine(`SuperCode task #${task.id} was aborted`);
-                    return;
+                try {
+                    const clientStatus = await supercodeClient.getClientStatus();
+                    
+                    // Check if client status is 'ready' (not busy and ready)
+                    if (!clientStatus.busy && clientStatus.status === 'ready') {
+                        // Run oncomplete hook
+                        const hookCompleteResult = await task.runHook('oncomplete');
+                        task.status = hookCompleteResult.failed ? 'error' : 'completed';
+                        this.outputChannel.appendLine(`SuperCode task #${task.id} completed - client status is ready`);
+                        return;
+                    }
+                    
+                    // Check for error status
+                    if (clientStatus.status === 'error') {
+                        task.status = 'error';
+                        this.outputChannel.appendLine(`SuperCode task #${task.id} failed - client status is error: ${clientStatus.message || 'Unknown error'}`);
+                        return;
+                    }
+                    
+                    // Log current status for debugging
+                    this.outputChannel.appendLine(`SuperCode task #${task.id} status: busy=${clientStatus.busy}, status=${clientStatus.status}`);
+                    
+                } catch (statusError) {
+                    this.outputChannel.appendLine(`Error getting SuperCode client status for task #${task.id}: ${statusError}`);
+                    // Continue polling in case it's a temporary issue
                 }
 
                 // Wait 1 second before checking again

@@ -276,6 +276,95 @@ export class AgentWorkbook implements ICommandExecutor {
         }
     }
 
+    /**
+     * Make HTTP requests from the TypeScript layer
+     * This is more reliable than using shell curl commands across different platforms
+     */
+    async makeHttpRequest(options: {
+        method: string;
+        url: string;
+        headers?: Record<string, string>;
+        body?: string;
+        timeout?: number;
+    }): Promise<{success: boolean; statusCode?: number; error?: string; response?: string}> {
+        try {
+            this.outputChannel.appendLine(`Making HTTP request: ${options.method} ${options.url}`);
+            
+            // Use Node.js fetch (available in Node 18+) or fall back to https module
+            const https = require('https');
+            const http = require('http');
+            const url = require('url');
+            
+            const parsedUrl = url.parse(options.url);
+            const isHttps = parsedUrl.protocol === 'https:';
+            const client = isHttps ? https : http;
+            
+            const requestOptions = {
+                hostname: parsedUrl.hostname,
+                port: parsedUrl.port || (isHttps ? 443 : 80),
+                path: parsedUrl.path,
+                method: options.method,
+                headers: {
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    ...options.headers
+                },
+                timeout: options.timeout || 10000
+            };
+            
+            return new Promise((resolve) => {
+                const req = client.request(requestOptions, (res: any) => {
+                    let data = '';
+                    
+                    res.on('data', (chunk: any) => {
+                        data += chunk;
+                    });
+                    
+                    res.on('end', () => {
+                        const success = res.statusCode >= 200 && res.statusCode < 300;
+                        this.outputChannel.appendLine(`HTTP request completed: ${res.statusCode}`);
+                        
+                        resolve({
+                            success,
+                            statusCode: res.statusCode,
+                            response: data,
+                            error: success ? undefined : `HTTP ${res.statusCode}: ${data}`
+                        });
+                    });
+                });
+                
+                req.on('error', (error: any) => {
+                    this.outputChannel.appendLine(`HTTP request error: ${error.message}`);
+                    resolve({
+                        success: false,
+                        error: error.message
+                    });
+                });
+                
+                req.on('timeout', () => {
+                    req.destroy();
+                    this.outputChannel.appendLine(`HTTP request timeout`);
+                    resolve({
+                        success: false,
+                        error: 'Request timeout'
+                    });
+                });
+                
+                // Send the body if provided
+                if (options.body) {
+                    req.write(options.body);
+                }
+                req.end();
+            });
+            
+        } catch (error) {
+            this.outputChannel.appendLine(`HTTP request exception: ${error}`);
+            return {
+                success: false,
+                error: String(error)
+            };
+        }
+    }
+
     livePreview(): AgentWorkbookStatus {
         return new AgentWorkbookStatus(this.tasks.getRendererTasks(), this.worker.active);
     }

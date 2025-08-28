@@ -127,6 +127,13 @@ export class SuperCodeClient implements ITaskClient {
     }
 
     /**
+     * Get raw client status from TUI API (public method for polling)
+     */
+    async getClientStatus(): Promise<TUIStatusResponse> {
+        return await this.getStatus();
+    }
+
+    /**
      * Make an HTTP request to the TUI API with retry logic
      */
     private async makeRequest(method: 'GET' | 'POST', path: string, body?: any): Promise<any> {
