@@ -1386,3 +1386,108 @@ def preview_prompt(prompt: str, workspace_root: Optional[str] = None) -> dict:
             'flags_applied': [],
             'errors': [f'Error processing flags: {str(e)}']
         }
+
+@track_api_call
+async def run(script_name: str, *args, output_format: str = 'string'):
+    """
+    Run a Python script from .agentworkbook/run_scripts/ folder.
+    
+    This function allows you to execute custom Python scripts stored in the 
+    .agentworkbook/run_scripts/ directory. Scripts must accept an --out parameter
+    for output file path. The function will pass a temporary file as the output
+    path, execute the script, and return the content from the output file.
+    
+    Args:
+        script_name (str): Name of the script file (e.g., 'analyze.py')
+        *args: Variable arguments to pass to the script
+        output_format (str): Format to parse output file ('string' or 'json')
+                            - 'string': Return raw content as string
+                            - 'json': Parse content as JSON and return object
+    
+    Returns:
+        Content from the script's output file. Type depends on output_format:
+        - 'string': Returns string content
+        - 'json': Returns parsed JSON object/array
+    
+    Raises:
+        Exception: If script execution fails, output file not created, or JSON parsing fails
+    
+    Examples:
+        import agentworkbook as awb
+        
+        # Basic script execution returning string
+        result = await awb.run('process_data.py', 'input.csv')
+        print(result)  # Raw string output
+        
+        # Script with multiple arguments returning JSON
+        data = await awb.run('analyze.py', 'data.csv', '--verbose', output_format='json')
+        print(f"Analysis found {len(data['results'])} items")
+        
+        # Script with complex arguments
+        summary = await awb.run('summarize.py', 'report.txt', '--max-lines', '100')
+        
+    Script Requirements:
+        Your scripts must:
+        1. Accept --out <path> parameter for output file
+        2. Write results to the specified output file
+        3. Return appropriate exit codes (0 for success)
+        
+        Example script structure:
+        ```python
+        import argparse
+        import json
+        
+        def main():
+            parser = argparse.ArgumentParser()
+            parser.add_argument('input_file')
+            parser.add_argument('--out', required=True, help='Output file path')
+            parser.add_argument('--verbose', action='store_true')
+            args = parser.parse_args()
+            
+            # Your processing logic here
+            result = {"processed": args.input_file, "verbose": args.verbose}
+            
+            # Write to output file
+            with open(args.out, 'w') as f:
+                json.dump(result, f)
+        
+        if __name__ == '__main__':
+            main()
+        ```
+    
+    Note:
+        - Scripts are executed using 'uv run' for better dependency management
+        - External dependencies listed in script headers are auto-installed
+        - Each script runs in an isolated environment (no global pollution)
+        - Temporary output files are automatically cleaned up
+        - Both stdout/stderr are displayed in the output channel
+        - Scripts must be placed in .agentworkbook/run_scripts/ folder
+        - Use absolute paths if your script needs to access workspace files
+    """
+    # Input validation
+    if not script_name or not isinstance(script_name, str) or not script_name.strip():
+        raise ValueError("Script name must be a non-empty string")
+    
+    if output_format not in ('string', 'json'):
+        raise ValueError("output_format must be 'string' or 'json'")
+    
+    try:
+        # Convert args to list of strings
+        args_list = [str(arg) for arg in args]
+        
+        # Call the TypeScript implementation - it returns raw string content
+        raw_output = await api.runScript(script_name, args_list)
+        
+        # Parse output based on requested format
+        if output_format == 'json':
+            try:
+                import json
+                return json.loads(raw_output)
+            except json.JSONDecodeError as json_error:
+                raise Exception(f"Failed to parse output as JSON: {str(json_error)}. Raw content: {raw_output}")
+        else:
+            return raw_output
+        
+    except Exception as e:
+        # Re-raise with more context
+        raise Exception(f"Script execution failed: {str(e)}")

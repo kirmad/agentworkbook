@@ -555,6 +555,122 @@ export class AgentWorkbook implements ICommandExecutor {
     }
 
     /**
+     * Run a Python script from .agentworkbook/run_scripts/ folder
+     * 
+     * @param scriptName Name of the script file (e.g., 'analyze.py')
+     * @param args Arguments to pass to the script
+     * @returns Promise resolving to the raw content from the script's output file as string
+     */
+    async runScript(scriptName: string, args: string[] = []): Promise<string> {
+        try {
+            const path = require('path');
+            const fs = require('fs').promises;
+            const os = require('os');
+            const crypto = require('crypto');
+
+            this.outputChannel.appendLine(`[SCRIPT] Running script: ${scriptName}`);
+            
+            // Validate script name
+            if (!scriptName || !scriptName.trim()) {
+                throw new Error('Script name cannot be empty');
+            }
+
+            // Construct script path - use VS Code workspace root if available
+            let workspaceRoot = this.workingDirectory;
+            if (!workspaceRoot && vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+            }
+            workspaceRoot = workspaceRoot || process.cwd();
+            
+            this.outputChannel.appendLine(`[SCRIPT] Workspace root: ${workspaceRoot}`);
+            
+            const scriptsDir = path.join(workspaceRoot, '.agentworkbook', 'run_scripts');
+            const scriptPath = path.join(scriptsDir, scriptName);
+            
+            this.outputChannel.appendLine(`[SCRIPT] Looking for script in: ${scriptsDir}`);
+
+            // Validate script path to prevent directory traversal
+            const resolvedScriptPath = path.resolve(scriptPath);
+            const resolvedScriptsDir = path.resolve(scriptsDir);
+            if (!resolvedScriptPath.startsWith(resolvedScriptsDir)) {
+                throw new Error('Invalid script path: directory traversal not allowed');
+            }
+
+            // Check if scripts directory exists
+            try {
+                await fs.access(resolvedScriptsDir);
+            } catch (error) {
+                throw new Error(`Scripts directory not found. Please create the .agentworkbook/run_scripts/ folder in your workspace root (${workspaceRoot}) and add your scripts there.`);
+            }
+
+            // Check if script exists
+            try {
+                await fs.access(resolvedScriptPath);
+            } catch (error) {
+                throw new Error(`Script not found: ${scriptName}. Make sure it exists in .agentworkbook/run_scripts/ folder (searched in: ${scriptsDir})`);
+            }
+
+            // Create temporary output file
+            const tempDir = os.tmpdir();
+            const tempFileName = `agentworkbook_script_output_${crypto.randomUUID()}.tmp`;
+            const tempFilePath = path.join(tempDir, tempFileName);
+
+            this.outputChannel.appendLine(`[SCRIPT] Using temp file: ${tempFilePath}`);
+
+            // Build command using uv run for better dependency management
+            const cmdArgs = ['uv', 'run', resolvedScriptPath, ...args, '--out', tempFilePath];
+            const command = cmdArgs.map(arg => {
+                // Quote arguments that contain spaces
+                return arg.includes(' ') ? `"${arg}"` : arg;
+            }).join(' ');
+
+            this.outputChannel.appendLine(`[SCRIPT] Executing: ${command}`);
+
+            // Execute the script
+            const result = await this.executeShell(command);
+
+            // Print stdout and stderr
+            if (result.stdout) {
+                this.outputChannel.appendLine(`[SCRIPT OUTPUT] ${result.stdout}`);
+                console.log(result.stdout); // Also log to console for Python to capture
+            }
+            if (result.stderr) {
+                this.outputChannel.appendLine(`[SCRIPT ERROR] ${result.stderr}`);
+                console.error(result.stderr); // Also log to console for Python to capture
+            }
+
+            // Check if script executed successfully
+            if (result.exitCode !== 0) {
+                throw new Error(`Script failed with exit code ${result.exitCode}. Check the error output above.`);
+            }
+
+            // Read the output file
+            let outputContent: string;
+            try {
+                outputContent = await fs.readFile(tempFilePath, 'utf8');
+            } catch (error) {
+                throw new Error(`Script did not create output file or output file is not readable: ${error.message}`);
+            }
+
+            // Cleanup temp file
+            try {
+                await fs.unlink(tempFilePath);
+                this.outputChannel.appendLine(`[SCRIPT] Cleaned up temp file: ${tempFilePath}`);
+            } catch (error) {
+                this.outputChannel.appendLine(`[SCRIPT WARNING] Failed to cleanup temp file: ${error.message}`);
+                // Don't throw error for cleanup failure
+            }
+
+            this.outputChannel.appendLine(`[SCRIPT] Script executed successfully`);
+            return outputContent;
+
+        } catch (error) {
+            this.outputChannel.appendLine(`[SCRIPT ERROR] Script execution failed: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
      * Handles PostHog events emitted from Python code
      * This function is called by the Python code via the emitPosthogEvent API
      *

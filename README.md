@@ -23,6 +23,7 @@
 - **⚡ Parallel Execution**: Efficient task processing with worker-based architecture
 - **🔗 Shell Integration**: Execute shell commands with `!` syntax and command caching
 - **🎯 Event Hooks**: Custom Python hooks for task lifecycle events (onstart, oncomplete, etc.)
+- **🐍 Custom Script Runner**: Execute your own Python scripts with `awb.run()` for data processing and analysis
 - **📊 Analytics & Telemetry**: Built-in usage analytics with PostHog integration (privacy-respecting)
 - **🎨 Custom Renderers**: Rich visual representation of task statuses and results
 
